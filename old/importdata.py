@@ -2,11 +2,7 @@ import pandas as pd
 
 import psycopg2
 
-conn = psycopg2.connect(database="postgres",
-                        host="db.cfwhcubsayehudtvrfxk.supabase.co",
-                        user="postgres",
-                        password="rBEQd5Lb8Y8fjKPt",
-                        port="5432")
+
 
 def import_stocks():
     stocks = pd.read_excel("/Users/witek/Downloads/Pieniądze.xlsx", "Giełda")
