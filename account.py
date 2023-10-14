@@ -6,7 +6,7 @@ import yfinance as yf
 
 @st.cache_data(ttl= 3600)
 def get_account_summary(stocks, bonds):
-    now = date.today() + relativedelta(days=1)
+    now = date.today()# + relativedelta(days=1)
 
     currencies = stocks.groupby("currency")["transaction_date"].min()
 
@@ -47,7 +47,7 @@ def get_account_summary(stocks, bonds):
     quotes = pd.concat(quotesDfs)
     quotes.reset_index(inplace=True)
     quotes.drop("index", axis="columns", inplace=True)
-    quotes.set_index(["Date", "ticker"])
+    #quotes.set_index(["Date", "ticker"], inplace=True)
 
     stocks_grouped = pd.DataFrame(stocks.groupby(["transaction_date", "ticker", "currency"])["count"].sum())
     stocks_grouped.reset_index(inplace=True)
@@ -56,12 +56,32 @@ def get_account_summary(stocks, bonds):
     account_value_df["currency"].ffill(inplace=True)
     account_value_df["count"].fillna(0, inplace=True)
     account_value_df.drop("transaction_date", axis="columns", inplace=True)
-    account_value_df.set_index(["Date", "ticker"], inplace=True)
-    account_value_df.sort_index(inplace=True)
+    # account_value_df.set_index(["Date", "ticker"], inplace=True)
+    # account_value_df.sort_index(inplace=True)
     account_value_df["count_sum"] = account_value_df.groupby(["ticker"])["count"].cumsum()
     account_value_df["value"] = account_value_df["Close"] * account_value_df["count_sum"]
 
     account_value_df = pd.merge(left = account_value_df, right = currency_quotes, left_on=["Date", "currency"], right_on = ["Date", "currency"], how="left")
     account_value_df["value_pln"] = account_value_df["value"] * account_value_df["currency_rate"]
-    account_value_sum_df = account_value_df.groupby("Date")["value_pln"].sum()
+    account_value_df = account_value_df[["Date", "ticker", "value_pln"]].copy()
+    account_value_df.set_index(["Date", "ticker"], inplace=True)
+    account_value_df.sort_index(inplace=True)
+    bonds_value = [account_value_df]
+    for i, val in bonds.iterrows():
+        bonds_df = pd.DataFrame(val["history"])
+        
+        bonds_df["value_pln"] = bonds_df["value"]
+        bonds_df.reset_index(inplace=True)
+        bonds_df.set_index(["Date", "ticker"], inplace=True)
+        bonds_df.drop("value", inplace=True, axis="columns")
+        bonds_df.drop("index", inplace=True, axis="columns")
+        
+        
+        bonds_value.append(bonds_df)
+
+    account_value_df = pd.concat(bonds_value)
+    account_value_df.sort_index(inplace=True)
+
+    account_value_sum_df = account_value_df.groupby("Date")["value_pln"].sum().round(2)
+    account_value_sum_df = pd.DataFrame(account_value_sum_df).reset_index()
     return account_value_sum_df

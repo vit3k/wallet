@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 import database
 import psycopg2.extras 
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 @st.cache_data(ttl = 3600)
@@ -16,7 +16,9 @@ def get_bonds_data():
     bondsDf["value"] = bondsDf.price * bondsDf["count"]
     bondsDf["current_value"] = bondsDf.apply(calculate_bond_value, axis=1)
     bondsDf["gain"] = bondsDf["current_value"] - bondsDf["value"]
-    return bondsDf
+    bondsDf["gain %"] = bondsDf["gain"] / bondsDf["value"] * 100
+    bondsDf["history"] = bondsDf.apply(calculate_bond_history, axis = 1)
+    return bondsDf.sort_values("transaction_date", ascending=False)
 
 @st.cache_data(ttl = 3600)
 def get_infation_data():
@@ -52,6 +54,44 @@ def calculate_rod_value(rod, now):
         currentValue = round(currentValue, 0)
     return currentValue
 
+def calculate_rod_history(rod, now):
+    currentValue = rod["value"]
+    inflationData = get_infation_data()
+    history = []
+    for i in range(0, 12):
+        valueInPeriod = 0
+        periodStart = rod.transaction_date + relativedelta(years=i)
+        if periodStart > now:
+            break
+        interestRate = rod.interest_rate
+        if i != 0:
+            inflationPeriod = periodStart - relativedelta(months=2)
+            inflationRate = (inflationData[(inflationData.year == inflationPeriod.year) & (inflationData.month == inflationPeriod.month)].iloc[0]["value"] - 100) / 100
+            interestRate = max(inflationRate, 0) + rod.margin
+
+        periodEnd = periodStart + relativedelta(years=1)
+        numberOfDays = (periodEnd - periodStart).days
+
+        if now < periodEnd:
+            periodEnd = now
+        interestRatePerDay = interestRate / numberOfDays
+
+        res_date = periodStart
+        while res_date <= periodEnd:
+            days = (res_date - periodStart).days
+            valueInPeriod = currentValue * days * interestRatePerDay
+            history.append({"ticker": rod["name"],"Date": res_date, "value": (currentValue + valueInPeriod)})
+            res_date += timedelta(days=1)
+
+        currentValue += valueInPeriod
+    return history
+
+def calculate_bond_history(bond, now = datetime.now().date()):
+    if bond.type == "ROD":
+        return calculate_rod_history(bond, now)
+    else:
+        raise Exception("Not supported bond type")
+    
 def calculate_bond_value(bond, now = datetime.now().date()):
     if bond.type == "ROD":
         return calculate_rod_value(bond, now)

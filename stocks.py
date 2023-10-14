@@ -27,8 +27,8 @@ def get_stocks_data():
     stocks["value_pln"] = stocks["price"] * stocks["count"] * stocks["currency_rate"]
     stocks["current_value_pln"] = stocks["current_price"] * stocks["count"] * stocks["current_currency_rate"]
     stocks["gain_pln"] = stocks["current_value_pln"] - stocks["value_pln"]
-
-
+    stocks["gain %"] = stocks["gain_pln"] / stocks["value_pln"] * 100
+    
     #print(stocks.groupby("ticker")["transaction_date"].min())
-    return stocks
+    return stocks.sort_values("transaction_date", ascending=False)
 
