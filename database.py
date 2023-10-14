@@ -1,14 +1,12 @@
 import psycopg2
-import config
 import streamlit as st
 
 @st.cache_resource
 def get_database():
-    dbc = config.get_config()["database"]
 
-    conn = psycopg2.connect(database=dbc["db"],
-                            host=dbc["host"],
-                            user=dbc["user"],
-                            password=dbc["password"],
-                            port=dbc["port"])
+    conn = psycopg2.connect(database=st.secrets.database_name,
+                            host=st.secrets.database_host,
+                            user=st.secrets.database_username,
+                            password=st.secrets.database_password,
+                            port=st.secrets.database_port)
     return conn

@@ -20,7 +20,7 @@ def get_bonds_data():
 
 @st.cache_data(ttl = 3600)
 def get_infation_data():
-    inflation = pd.read_excel("https://stat.gov.pl/download/gfx/portalinformacyjny/pl/defaultstronaopisowa/4741/1/1/miesieczne_wskazniki_cen_towarow_i_uslug_konsumpcyjnych_od_1982_roku_2.xlsx")
+    inflation = pd.read_excel("https://stat.gov.pl/download/gfx/portalinformacyjny/pl/defaultstronaopisowa/4741/1/1/miesieczne_wskazniki_cen_towarow_i_uslug_konsumpcyjnych_od_1982_roku.xlsx")
     filtered = inflation[inflation["Sposób prezentacji"] == "Analogiczny miesiąc poprzedniego roku = 100"][["Rok", "Miesiąc", "Wartość"]].copy()
     filtered.columns = ["year", "month", "value"]
     return filtered
