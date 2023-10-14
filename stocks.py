@@ -21,11 +21,13 @@ def get_stocks_data():
     cursor.close()
     stocks = pd.DataFrame(stocksResult)
 
+    stocks["count"] = stocks.apply(lambda s: s["count"] if s["direction"] == "B" else -s["count"], axis = 1)
     stocks["current_price"] = stocks["ticker"].map(lambda t: yf.Ticker(t).history("1d").iloc[0]["Close"])
     stocks["currency_ticker"] = stocks["currency"].map({"EUR": "EURPLN=X", "USD": "PLN=X"})
     stocks["current_currency_rate"] = stocks["currency_ticker"].map(lambda t: yf.Ticker(t).history("1d").iloc[0]["Close"])
-    stocks["value_pln"] = stocks["price"] * stocks["count"] * stocks["currency_rate"]
-    stocks["current_value_pln"] = stocks["current_price"] * stocks["count"] * stocks["current_currency_rate"]
+
+    stocks["value_pln"] = stocks.apply(lambda s: (s["price"] * s["count"] * s["currency_rate"]) if s["direction"] == "B" else 0, axis = 1)
+    stocks["current_value_pln"] = stocks.apply(lambda s: (s["current_price"] * s["count"] * s["current_currency_rate"]) if s["direction"] == "B" else 0, axis = 1)
     stocks["gain_pln"] = stocks["current_value_pln"] - stocks["value_pln"]
     stocks["gain %"] = stocks["gain_pln"] / stocks["value_pln"] * 100
     

@@ -3,7 +3,7 @@ import streamlit as st
 
 def account_chart(chart_data):
     
-    nearest = alt.selection_point(nearest=True, on='mouseover',
+    nearest = alt.selection_point(nearest=True, on='mouseover', empty=False,
                                 fields=['Date'])
 
     line = alt.Chart(chart_data).mark_line(interpolate='basis').encode(
