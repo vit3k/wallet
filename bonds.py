@@ -52,10 +52,7 @@ def calculate_rod_value(rod, now):
         currentValue = round(currentValue, 0)
     return currentValue
 
-def calculate_bond_value(bond, now):
-    return calculate_bond_value(bond, datetime.now().date())
-
-def calculate_bond_value(bond, now):
+def calculate_bond_value(bond, now = datetime.now().date()):
     if bond.type == "ROD":
         return calculate_rod_value(bond, now)
     else:
