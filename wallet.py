@@ -8,8 +8,9 @@ from account_chart import account_chart
 st.set_page_config(layout="wide")
 
 bondsData = bonds.get_bonds_data()
-stocksData = stocks.get_stocks_data()
 
+stocksData = stocks.get_stocks_data()
+print(stocksData)
 bondsAgg = pd.DataFrame(bondsData[["count", "value", "current_value", "gain"]].aggregate('sum')).transpose()
 bondsAgg["gain %"] = bondsAgg["gain"] / bondsAgg["value"] * 100
 
@@ -24,7 +25,9 @@ totalsDf = pd.DataFrame([[bondSum, stockSum, total], [bondSum/total * 100, stock
                         columns=["Obligacje", "Giełda", "Razem"], index=["Kwoty", "Procenty"])
 
 totalRow =  pd.DataFrame(stocksAgg.sum(), columns=['Total']).transpose()
+totalRow["gain %"] = totalRow["gain_pln"] / totalRow["value_pln"] * 100
 stocksAgg = pd.concat([stocksAgg, totalRow])
+#stocksAgg = pd.DataFrame(stocksAgg)
 stocksAgg.reset_index(inplace=True)
 accountSummary = account.get_account_summary(stocksData, bondsData)
 
@@ -51,7 +54,7 @@ st.header("Giełda")
 st.dataframe(stocksAgg.style.format(precision=2, thousands=' ').apply(gain_color, axis = 1), use_container_width = True, hide_index=True )
 
 st.header("Giełda - transakcje")
-st.dataframe(stocksData[["account_name", "ticker", "transaction_date", "count", "price", "currency", "value_pln", "current_value_pln", "gain_pln", "gain %"]], use_container_width=True, hide_index=True)
+st.dataframe(stocksData[["account_name", "ticker", "transaction_date", "count", "price", "currency", "value_pln", "current_value_pln", "gain_pln", "gain %"]].style.format(precision=2, thousands=' '), use_container_width=True, hide_index=True)
 
 st.header("Obligacje")
 bondsData["interest_rate %"] = bondsData["interest_rate"] * 100
