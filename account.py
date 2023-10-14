@@ -5,7 +5,7 @@ from datetime import date
 import yfinance as yf
 
 @st.cache_data(ttl= 3600)
-def get_account_summary(stocks):
+def get_account_summary(stocks, bonds):
     now = date.today() + relativedelta(days=1)
 
     currencies = stocks.groupby("currency")["transaction_date"].min()

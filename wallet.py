@@ -13,6 +13,7 @@ bondsAgg = pd.DataFrame(bondsData[["count", "value", "current_value", "gain"]].a
 bondsAgg["gain %"] = bondsAgg["gain"] / bondsAgg["value"] * 100
 
 stocksAgg = stocksData.groupby("ticker")[["count", "value_pln", "current_value_pln", "gain_pln"]].aggregate("sum")
+stocksAgg["gain %"] = stocksAgg["gain_pln"] / stocksAgg["value_pln"] * 100
 
 stocksPerAccount = stocksData.groupby(["account_id", "account_name"])[["value_pln", "current_value_pln"]].sum()
 
@@ -26,7 +27,7 @@ totalsDf = pd.DataFrame([[bondSum, stockSum, total], [bondSum/total * 100, stock
 totalRow =  pd.DataFrame(stocksAgg.sum(), columns=['Total']).transpose()
 stocksAgg = pd.concat([stocksAgg, totalRow])
 
-accountSummary = account.get_account_summary(stocksData)
+accountSummary = account.get_account_summary(stocksData, bondsData)
 ## UI
 
 st.title("Portfel")
