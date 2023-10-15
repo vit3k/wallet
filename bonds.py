@@ -27,7 +27,7 @@ def get_infation_data():
     filtered.columns = ["year", "month", "value"]
     return filtered
 
-def calculate_rod_value(rod, now):
+def calculate_rod_value(rod: pd.Series, now: datetime.date):
     currentValue = rod["value"]
     inflationData = get_infation_data()
     
@@ -92,7 +92,7 @@ def calculate_bond_history(bond, now = datetime.now().date()):
     else:
         raise Exception("Not supported bond type")
     
-def calculate_bond_value(bond, now = datetime.now().date()):
+def calculate_bond_value(bond: pd.Series, now = datetime.now().date()):
     if bond.type == "ROD":
         return calculate_rod_value(bond, now)
     else:

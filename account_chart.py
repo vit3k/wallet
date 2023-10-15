@@ -1,7 +1,7 @@
 import altair as alt
 import streamlit as st
 
-def account_chart(chart_data):
+def account_chart(chart_data) -> alt.Chart:
     
     nearest = alt.selection_point(nearest=True, on='mouseover', empty=False,
                                 fields=['Date'])

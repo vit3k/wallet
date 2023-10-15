@@ -4,13 +4,39 @@ import database
 import psycopg2.extras
 import pandas as pd
 
-
-
 def get_current_quote(ticker):
     yf.Ticker(ticker).history("1d").iloc[0]["Close"]
 
 def get_stock_history(t):
     pass
+
+@st.cache_data(ttl = 3600)
+def get_quote(ticker: str) -> float:
+    return yf.Ticker(ticker).history("1d").iloc[0]["Close"]
+
+def calculate_values(s: pd.Series, stocks: pd.DataFrame):
+    value_pln = 0
+    if s["direction"] == "S":
+        s["count"] = -s["count"]
+        if s["source_transaction_id"] is not None:
+            price = s["source_price"]
+            currency_rate = s["source_currency_rate"]
+            s["value_pln"] =  price * s["count"] * currency_rate
+        else:
+            # calculate source in FIFO manner
+            buys = stocks[(stocks["ticker"] == s["ticker"]) and (stocks["direction"] == "B")]
+            buys.sort_values("transaction_date", ascending=True, inplace=True)
+            print(buys)
+            # TODO: finish but this can happen only on IKE/IKZE for now so low priority
+            pass
+    else:
+        price = s["price"]
+        currency_rate = s["currency_rate"]
+        s["value_pln"] =  price * s["count"] * currency_rate
+
+    
+    
+    return s
 
 @st.cache_data(ttl = 3600)
 def get_stocks_data():
@@ -21,24 +47,14 @@ def get_stocks_data():
     cursor.close()
     stocks = pd.DataFrame(stocksResult)
 
-    stocks["count"] = stocks.apply(lambda s: s["count"] if s["direction"] == "B" else -s["count"], axis = 1)
-    stocks["current_price"] = stocks["ticker"].map(lambda t: yf.Ticker(t).history("1d").iloc[0]["Close"])
+    stocks["current_price"] = stocks["ticker"].map(get_quote)
     stocks["currency_ticker"] = stocks["currency"].map({"EUR": "EURPLN=X", "USD": "PLN=X"})
     stocks["current_currency_rate"] = stocks["currency_ticker"].map(lambda t: yf.Ticker(t).history("1d").iloc[0]["Close"])
     
-    stocks["value_pln"] = stocks.apply(lambda s: 
-                                       (
-                                           (s["source_price"] if s["direction"] == "S" else s["price"]) * 
-                                           s["count"] * 
-                                           (s["source_currency_rate"] if s["direction"]=="S" else s["currency_rate"])
-                                           ), axis = 1)
-    stocks["current_value_pln"] = stocks.apply(lambda s: (s["current_price"] * s["count"] * s["current_currency_rate"]), axis = 1)
+    stocks = stocks.apply(lambda s: calculate_values(s, stocks), axis = 1)
+    stocks["current_value_pln"] = stocks["current_price"] * stocks["current_currency_rate"] * stocks["count"]
     stocks["gain_pln"] = stocks["current_value_pln"] - stocks["value_pln"]
     stocks["gain %"] = stocks["gain_pln"] / stocks["value_pln"] * 100
-    
-    if stocks["direction"] == "S" and stocks["source_transaction_id"] is None:
-        pass # do something when sell in FIFO manner
-    
-    #print(stocks.groupby("ticker")["transaction_date"].min())
+
     return stocks.sort_values("transaction_date", ascending=False)
 
