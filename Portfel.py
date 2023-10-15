@@ -79,20 +79,22 @@ def money_color(s):
 col1, col2 = st.columns(2)
 
 with col1:
-    st.header("Wartość portfela")
-    st.dataframe(totalsDf.style.format(precision=2, thousands=' '), use_container_width = True )
-
-with col2:
-    st.header("Zasoby")
+    st.header("Razem")
     st.dataframe(totals.style.format(precision=2, thousands=' '), use_container_width = True )
+    
+with col2:
+    st.header("Pieniądze")
+    st.dataframe(money_agg_currency.style.format(precision=2, thousands=' ').apply(money_agg_color, axis=1), use_container_width = True, hide_index = True)
 
 col3, col4 = st.columns(2)
 with col3:
-    st.header("Obligacje - podsumowanie")
-    st.dataframe(bondsAgg.style.format(precision=2, thousands=' '), hide_index=True, use_container_width = True )
+    st.header("Inwestycje")
+    st.dataframe(totalsDf.style.format(precision=2, thousands=' '), use_container_width = True )
+    
 with col4:
-    st.header("Pieniądze")
-    st.dataframe(money_agg_currency.style.format(precision=2, thousands=' ').apply(money_agg_color, axis=1), use_container_width = True, hide_index = True)
+    st.header("Obligacje")
+    st.dataframe(bondsAgg.style.format(precision=2, thousands=' '), hide_index=True, use_container_width = True )
+    
 
 def gain_color(s):
     if s["index"] == "Total":
