@@ -50,7 +50,7 @@ bondSum = bondsAgg["current_value"].sum()
 total = bondSum + stockSum
 
 totalsDf = pd.DataFrame([[bondSum, stockSum, total], [bondSum/total * 100, stockSum/total * 100, 100]], 
-                        columns=["Obligacje", "Giełda", "Razem"], index=["Kwoty", "Procenty"])
+                        columns=["Obligacje", "Giełda", "Razem"], index=["Kwoty", "Procenty"]).transpose()
 
 totalRow =  pd.DataFrame(stocksAgg.sum(), columns=['Total']).transpose()
 totalRow["gain %"] = totalRow["gain_pln"] / totalRow["value_pln"] * 100
@@ -60,7 +60,7 @@ accountSummary = account.get_account_summary(stocksData, bondsData)
 
 
 totals = pd.DataFrame([[total, money_total, (total+money_total)], [total/(total+money_total) * 100, money_total/(total+money_total) * 100, 100]], 
-                        columns=["Zainwestowane", "Pieniądze", "Razem"], index=["Kwoty", "Procenty"])
+                        columns=["Zainwestowane", "Pieniądze", "Razem"], index=["Kwoty", "Procenty"]).transpose()
 
 ## UI
 st.title("Portfel")
