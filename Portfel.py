@@ -26,7 +26,6 @@ money_agg["current_currency_rate"] = money_agg["currency_ticker"].map(lambda t: 
 money_agg["value_pln"] = money_agg["value"] * money_agg["current_currency_rate"]
 
 money_agg = money_agg[["account", "currency", "value", "value_pln"]].copy()
-#print(money_agg)
 
 money_agg_currency = money_agg.groupby("currency")[["value", "value_pln"]].sum()
 money_agg_currency.reset_index(inplace=True)
@@ -66,7 +65,6 @@ totals = pd.DataFrame([[total, money_total, (total+money_total)], [total/(total+
 st.title("Portfel")
 
 def money_agg_color(s: pd.Series):
-    print(s)
     if s["currency"] == "Total":
         return ['background-color: #005f7e; font-weight: bold']*len(s)
     return ['']*len(s)

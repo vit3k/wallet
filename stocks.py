@@ -26,7 +26,6 @@ def calculate_values(s: pd.Series, stocks: pd.DataFrame):
             # calculate source in FIFO manner
             buys = stocks[(stocks["ticker"] == s["ticker"]) and (stocks["direction"] == "B")]
             buys.sort_values("transaction_date", ascending=True, inplace=True)
-            print(buys)
             # TODO: finish but this can happen only on IKE/IKZE for now so low priority
             pass
     else:
