@@ -1,14 +1,18 @@
 import altair as alt
 import streamlit as st
+import pandas as pd
 
-def account_chart(chart_data) -> alt.Chart:
+def account_chart(chart_data: pd.DataFrame) -> alt.Chart:
     
     nearest = alt.selection_point(nearest=True, on='mouseover', empty=False,
                                 fields=['Date'])
-
-    line = alt.Chart(chart_data).mark_line(interpolate='basis').encode(
-                x="Date",
-                y="value_pln",
+    # x_min = pd.Timestamp(chart_data["Date"].min()).timestamp()
+    # x_max = pd.Timestamp(chart_data["Date"].max()).timestamp()
+    # print(x_min, x_max)
+    line = alt.Chart(chart_data).mark_line().encode(
+                x=alt.X("Date", timeUnit='yearmonthdate'),#, scale = alt.Scale(domain=[x_min, x_max])),
+                y=alt.Y("value_pln"),
+                color="ticker"
                 #tooltip=["Date", "value_pln"]
             )
 
@@ -19,11 +23,11 @@ def account_chart(chart_data) -> alt.Chart:
     ).add_params(
         nearest
     )
-    # Draw points on the line, and highlight based on selection
+    # # Draw points on the line, and highlight based on selection
     points = line.mark_point().encode(
         opacity=alt.condition(nearest, alt.value(1), alt.value(0))
     )
-    # Draw text labels near the points, and highlight based on selection
+    # # Draw text labels near the points, and highlight based on selection
     # text = line.mark_text(align='left', dx=5, dy=-5).encode(
     #     text=alt.condition(nearest, 'value_pln', alt.value(' '))
     # )
@@ -36,5 +40,6 @@ def account_chart(chart_data) -> alt.Chart:
     chart = alt.layer(
         line, selectors, points, rules
     ).interactive()
+    #chart = line.interactive()
     return chart
     #st.altair_chart(chart, use_container_width=True)

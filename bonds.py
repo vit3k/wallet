@@ -57,7 +57,7 @@ def calculate_rod_value(rod: pd.Series, now: datetime.date):
 def calculate_rod_history(rod, now):
     currentValue = rod["value"]
     inflationData = get_infation_data()
-    history = []
+    history = [{"ticker": rod["name"],"Date": rod.transaction_date, "value": currentValue}]
     for i in range(0, 12):
         valueInPeriod = 0
         periodStart = rod.transaction_date + relativedelta(years=i)
@@ -76,14 +76,15 @@ def calculate_rod_history(rod, now):
             periodEnd = now
         interestRatePerDay = interestRate / numberOfDays
 
-        res_date = periodStart
+        res_date = periodStart + relativedelta(days=1)
         while res_date <= periodEnd:
             days = (res_date - periodStart).days
             valueInPeriod = currentValue * days * interestRatePerDay
             history.append({"ticker": rod["name"],"Date": res_date, "value": (currentValue + valueInPeriod)})
-            res_date += timedelta(days=1)
+            res_date += relativedelta(days=1)
 
         currentValue += valueInPeriod
+        
     return history
 
 def calculate_bond_history(bond, now = datetime.now().date()):

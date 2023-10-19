@@ -64,19 +64,28 @@ def get_account_summary(stocks: pd.DataFrame, bonds: pd.DataFrame) -> pd.DataFra
     account_value_df.set_index(["Date", "ticker"], inplace=True)
     account_value_df.sort_index(inplace=True)
     
-    bonds_value = [account_value_df]
+    bonds_value = []
     for i, val in bonds.iterrows():
         bonds_df = pd.DataFrame(val["history"])
         bonds_df["value_pln"] = bonds_df["value"]
         bonds_df.reset_index(inplace=True)
-        bonds_df.set_index(["Date", "ticker"], inplace=True)
+        #bonds_df.set_index(["Date", "ticker"], inplace=True)
         bonds_df.drop("value", inplace=True, axis="columns")
         bonds_df.drop("index", inplace=True, axis="columns")
         bonds_value.append(bonds_df)
+    
+    bonds_value_df = pd.concat(bonds_value)
+    bonds_value_df = pd.DataFrame(bonds_value_df.groupby("Date")["value_pln"].sum())
+    bonds_value_df["ticker"] = "Bonds"
+    bonds_value_df.reset_index(inplace=True)
+    bonds_value_df.set_index(["Date", "ticker"], inplace=True)
 
-    account_value_df = pd.concat(bonds_value)
+    account_value_df = pd.concat([account_value_df, bonds_value_df])
+
     account_value_df.sort_index(inplace=True)
+    account_value_df.reset_index(inplace=True)
 
-    account_value_sum_df = account_value_df.groupby("Date")["value_pln"].sum().round(2)
-    account_value_sum_df = pd.DataFrame(account_value_sum_df).reset_index()
-    return account_value_sum_df
+    #account_value_sum_df = account_value_df.groupby("Date")["value_pln"].sum().round(2)
+    #account_value_sum_df = pd.DataFrame(account_value_sum_df).reset_index()
+    #return account_value_sum_df
+    return account_value_df

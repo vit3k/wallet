@@ -3,6 +3,9 @@ import streamlit as st
 import database
 import psycopg2.extras
 import pandas as pd
+import numpy as np
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
 
 def get_current_quote(ticker):
     yf.Ticker(ticker).history("1d").iloc[0]["Close"]
@@ -56,4 +59,11 @@ def get_stocks_data():
     stocks["gain %"] = stocks["gain_pln"] / stocks["value_pln"] * 100
 
     return stocks.sort_values("transaction_date", ascending=False)
+
+@st.cache_data(ttl = 3600)
+def get_tickers(time_delta: relativedelta) -> np.ndarray:
+    stocks = get_stocks_data()
+    date = datetime.now() - time_delta
+    return stocks[stocks["transaction_date"] ]["ticker"].unique()
+
 

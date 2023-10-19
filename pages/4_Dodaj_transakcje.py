@@ -1,7 +1,10 @@
 import streamlit as st
-import time
 import data
 import pandas as pd
+import stocks
+import numpy as np
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 st.set_page_config(layout="wide")
 
@@ -12,7 +15,11 @@ def account_id_to_name(id):
 
 def stock_form():
     direction = st.selectbox("Rodzaj transakcji", ["Zakup", "Sprzedaz"])
-    ticker = st.text_input("Ticker")
+    tickers = stocks.get_tickers(relativedelta(years=1))
+    tickers =np.append(tickers, ["Inny"])
+    ticker = st.selectbox("Ticker", tickers)
+    if ticker == "Inny":
+        ticker = st.text_input("Inny ticker")
     transaction_date = st.date_input("Data transakcji")
     count = st.number_input("Liczba")
     price = st.number_input("Cena")
@@ -26,6 +33,19 @@ def stock_form():
     #     with st.spinner("Zapisuję"):
     #         time.sleep(2)
     #     st.success("Zapisano")
+    st.write(ticker)
+
+def bonds_form():
+    direction = st.selectbox("Rodzaj transakcji", ["Zakup", "Sprzedaz"])
+    bond_type = st.selectbox("Rodzaj obligacji", ["ROD"])
+    ticker = st.text_input("Nazwa")
+    transaction_date = st.date_input("Data transakcji")
+    count = st.number_input("Liczba")
+    price = st.number_input("Cena", value=(100 if bond_type=="ROD" else None))
+    interest_rate = st.number_input("Oprocentowania")
+    margin = st.number_input("Marza")
+    early_sell_commision = st.number_input("Kara za wczesny wykup", value=(2 if bond_type=="ROD" else None))
+    add_transaction_click = st.button("Dodaj")
 
 st.header("Dodaj transakcje")
 
@@ -34,6 +54,8 @@ instrument_type = st.selectbox("Typ instrumentu", ["Giełda", "Obligacje"])
 match instrument_type:
     case "Giełda":
         stock_form()
+    case "Obligacje":
+        bonds_form()
     case _:
         st.error("Not supported")
 

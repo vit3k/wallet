@@ -14,3 +14,4 @@ bondsData["margin %"] = bondsData["margin"] * 100
 
 st.dataframe(bondsData[["name", "transaction_date", "count", "interest_rate %", "margin %", "current_value", "gain"]], hide_index=True, use_container_width=True)
 
+# st.dataframe(bondsData.tail(1)["history"][0])

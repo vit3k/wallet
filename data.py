@@ -23,3 +23,29 @@ def get_accounts_money() -> pd.DataFrame:
     accounts = pd.DataFrame(accounts)
 
     return accounts
+
+@st.cache_data(ttl = 3600)
+def get_accounts_money_latest() -> pd.DataFrame:
+    money = get_accounts_money()
+    money_idxmax = pd.DataFrame(money.groupby(["account_id", "account", "currency"])["created_at"].idxmax())
+    money_idxmax.reset_index(inplace=True)
+    money_agg = []
+    for i, val in money_idxmax.iterrows():
+        row = money.iloc[val["created_at"]]
+        money_agg.append(row)
+
+    money_agg = pd.DataFrame(money_agg)
+    money_agg["currency_ticker"] = money_agg["currency"].map({"EUR": "EURPLN=X", "USD": "PLN=X", "PLN": "PLN"})
+    money_agg["current_currency_rate"] = money_agg["currency_ticker"].map(lambda t: yf.Ticker(t).history("1d").iloc[0]["Close"] if t != "PLN" else 1)
+    money_agg["value_pln"] = money_agg["value"] * money_agg["current_currency_rate"]
+
+    money_agg = money_agg[["account", "currency", "value", "value_pln"]].copy()
+
+    return money_agg
+
+@st.cache_data(ttl = 3600)
+def get_money_currencies() -> pd.DataFrame:
+    money_agg = get_accounts_money_latest()
+    money_agg_currency = money_agg.groupby("currency")[["value", "value_pln"]].sum()
+    money_agg_currency.reset_index(inplace=True)
+    return money_agg_currency
