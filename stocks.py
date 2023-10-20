@@ -50,8 +50,8 @@ def get_stocks_data():
     stocks = pd.DataFrame(stocksResult)
 
     stocks["current_price"] = stocks["ticker"].map(get_quote)
-    stocks["currency_ticker"] = stocks["currency"].map({"EUR": "EURPLN=X", "USD": "PLN=X"})
-    stocks["current_currency_rate"] = stocks["currency_ticker"].map(lambda t: yf.Ticker(t).history("1d").iloc[0]["Close"])
+    stocks["currency_ticker"] = stocks["currency"].map({"EUR": "EURPLN=X", "USD": "PLN=X", "PLN": "PLN"})
+    stocks["current_currency_rate"] = stocks["currency_ticker"].map(lambda t: 1 if t == "PLN" else yf.Ticker(t).history("1d").iloc[0]["Close"])
     
     stocks = stocks.apply(lambda s: calculate_values(s, stocks), axis = 1)
     stocks["current_value_pln"] = stocks["current_price"] * stocks["current_currency_rate"] * stocks["count"]
@@ -60,10 +60,21 @@ def get_stocks_data():
 
     return stocks.sort_values("transaction_date", ascending=False)
 
-@st.cache_data(ttl = 3600)
 def get_tickers(time_delta: relativedelta) -> np.ndarray:
     stocks = get_stocks_data()
     date = datetime.now() - time_delta
-    return stocks[stocks["transaction_date"] ]["ticker"].unique()
+    return stocks[stocks["transaction_date"] > date.date()]["ticker"].unique()
+
+def add_transaction(transaction):
+    print(transaction)
+    conn = database.get_database()
+    cursor = conn.cursor()
+    cursor.execute("insert into stocks (ticker, direction, transaction_date, price, currency, currency_rate, brokerage, count, account_id) values (%s ,%s, %s, %s, %s, %s, %s, %s, %s)", 
+                   (transaction["ticker"], transaction["direction"], transaction["transaction_date"], transaction["price"], 
+                    transaction["currency"], transaction["currency_rate"], transaction["brokerage"], transaction["count"], 
+                    transaction["account_id"]))
+    cursor.close()
+    conn.commit()
+    get_stocks_data.clear()
 
 

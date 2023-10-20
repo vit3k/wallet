@@ -43,9 +43,18 @@ def get_accounts_money_latest() -> pd.DataFrame:
 
     return money_agg
 
-@st.cache_data(ttl = 3600)
 def get_money_currencies() -> pd.DataFrame:
     money_agg = get_accounts_money_latest()
     money_agg_currency = money_agg.groupby("currency")[["value", "value_pln"]].sum()
     money_agg_currency.reset_index(inplace=True)
     return money_agg_currency
+
+def save_account_value(account_id, value):
+    conn = database.get_database()
+    cursor = conn.cursor()
+    cursor.execute("insert into account_money (account_id, value) values (%s ,%s)", (account_id, value))
+    cursor.close()
+    conn.commit()
+    get_accounts_data.clear()
+    get_accounts_money_latest.clear()
+    get_accounts_money.clear()

@@ -15,6 +15,7 @@ def account_id_to_name(id):
 
 def stock_form():
     direction = st.selectbox("Rodzaj transakcji", ["Zakup", "Sprzedaz"])
+    direction = "B" if direction == "Zakup" else "S"
     tickers = stocks.get_tickers(relativedelta(years=1))
     tickers =np.append(tickers, ["Inny"])
     ticker = st.selectbox("Ticker", tickers)
@@ -24,16 +25,25 @@ def stock_form():
     count = st.number_input("Liczba")
     price = st.number_input("Cena")
     currency = st.selectbox("Waluta", ["PLN", "USD", "EUR"])
-    currecy_rate = st.number_input("Kurs waluty")
-    borkerage = st.number_input("Prowizja")
-    account = st.selectbox("Konto", accounts["id"], format_func=account_id_to_name)
-    #st.form_submit_button('Dodaj transakcję')
+    currency_rate = st.number_input("Kurs waluty")
+    brokerage = st.number_input("Prowizja")
+    account_id = st.selectbox("Konto", accounts["id"], format_func=account_id_to_name)
     add_transaction_click = st.button("Dodaj")
-    # if add_transaction_click:
-    #     with st.spinner("Zapisuję"):
-    #         time.sleep(2)
-    #     st.success("Zapisano")
-    st.write(ticker)
+    if add_transaction_click:
+        with st.spinner("Zapisuję"):
+            stocks.add_transaction({
+                "ticker": ticker, 
+                "direction": direction, 
+                "transaction_date": transaction_date, 
+                "count": count, 
+                "price": price, 
+                "currency": currency, 
+                "currency_rate": currency_rate, 
+                "brokerage": brokerage, 
+                "account_id": account_id
+            })
+        st.success("Zapisano")
+        st.rerun()
 
 def bonds_form():
     direction = st.selectbox("Rodzaj transakcji", ["Zakup", "Sprzedaz"])
