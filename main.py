@@ -10,7 +10,7 @@ import uvicorn
 class JSONDirectResponse(Response):
     media_type = "application/json"
 
-db = data.database.get_database("user=postgres password=jufFo2-xycgyn-viqmam host=db.cfwhcubsayehudtvrfxk.supabase.co port=5432 dbname=postgres")
+db = data.database.get_database("user=postgres password=* host=db.cfwhcubsayehudtvrfxk.supabase.co port=5432 dbname=postgres")
 
 app = FastAPI()
 
