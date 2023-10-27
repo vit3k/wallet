@@ -1,12 +1,10 @@
 import streamlit as st
-import bonds
 import pandas as pd
-import stocks
-import account
+import cached_data as data
 from account_chart import account_chart
 
 st.set_page_config(layout="wide")
-bondsData = bonds.get_bonds_data()
+bondsData = data.get_bonds_data()
 
 st.header("Obligacje")
 bondsData["interest_rate %"] = bondsData["interest_rate"] * 100

@@ -1,9 +1,7 @@
 import streamlit as st
-import data
+import cached_data as data
 import pandas as pd
-import stocks
 import numpy as np
-from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 st.set_page_config(layout="wide")
@@ -16,7 +14,7 @@ def account_id_to_name(id):
 def stock_form():
     direction = st.selectbox("Rodzaj transakcji", ["Zakup", "Sprzedaz"])
     direction = "B" if direction == "Zakup" else "S"
-    tickers = stocks.get_tickers(relativedelta(years=1))
+    tickers = data.get_tickers(relativedelta(years=1).days)
     tickers =np.append(tickers, ["Inny"])
     ticker = st.selectbox("Ticker", tickers)
     if ticker == "Inny":
@@ -31,7 +29,7 @@ def stock_form():
     add_transaction_click = st.button("Dodaj")
     if add_transaction_click:
         with st.spinner("Zapisuję"):
-            stocks.add_transaction({
+            data.add_transaction({
                 "ticker": ticker, 
                 "direction": direction, 
                 "transaction_date": transaction_date, 
@@ -56,6 +54,21 @@ def bonds_form():
     margin = st.number_input("Marza")
     early_sell_commision = st.number_input("Kara za wczesny wykup", value=(2 if bond_type=="ROD" else None))
     add_transaction_click = st.button("Dodaj")
+    if add_transaction_click:
+        with st.spinner("Zapisuję"):
+            data.add_transaction({
+                "bond_type": bond_type,
+                "ticker": ticker, 
+                "direction": direction, 
+                "transaction_date": transaction_date, 
+                "count": count, 
+                "price": price, 
+                "interest_rate": interest_rate, 
+                "margin": margin, 
+                "early_sell_commision": early_sell_commision
+            })
+        st.success("Zapisano")
+        st.rerun()
 
 st.header("Dodaj transakcje")
 

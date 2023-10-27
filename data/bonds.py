@@ -1,35 +1,31 @@
 import pandas as pd
-import streamlit as st
-import database
-import psycopg2.extras 
+
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+import psycopg
 
-@st.cache_data(ttl = 3600)
-def get_bonds_data():
-    conn = database.get_database()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cursor.execute("SELECT * FROM bonds")
-    bonds = cursor.fetchall()
-    cursor.close()
-    bondsDf = pd.DataFrame(bonds)
-    bondsDf["value"] = bondsDf.price * bondsDf["count"]
-    bondsDf["current_value"] = bondsDf.apply(calculate_bond_value, axis=1)
-    bondsDf["gain"] = bondsDf["current_value"] - bondsDf["value"]
-    bondsDf["gain %"] = bondsDf["gain"] / bondsDf["value"] * 100
-    bondsDf["history"] = bondsDf.apply(calculate_bond_history, axis = 1)
-    return bondsDf.sort_values("transaction_date", ascending=False)
-
-@st.cache_data(ttl = 3600)
 def get_infation_data():
     inflation = pd.read_excel("https://stat.gov.pl/download/gfx/portalinformacyjny/pl/defaultstronaopisowa/4741/1/1/miesieczne_wskazniki_cen_towarow_i_uslug_konsumpcyjnych_od_1982_roku.xlsx")
     filtered = inflation[inflation["Sposób prezentacji"] == "Analogiczny miesiąc poprzedniego roku = 100"][["Rok", "Miesiąc", "Wartość"]].copy()
     filtered.columns = ["year", "month", "value"]
     return filtered
 
-def calculate_rod_value(rod: pd.Series, now: datetime.date):
+def get_bonds_data(conn: psycopg.connection.Connection, inflation_data):
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM bonds")
+    bonds = cursor.fetchall()
+    cursor.close()
+    bondsDf = pd.DataFrame(bonds)
+    bondsDf["value"] = bondsDf.price * bondsDf["count"]
+    bondsDf["current_value"] = bondsDf.apply(lambda b: calculate_bond_value(b, inflation_data), axis=1)
+    bondsDf["gain"] = bondsDf["current_value"] - bondsDf["value"]
+    bondsDf["gain %"] = bondsDf["gain"] / bondsDf["value"] * 100
+    bondsDf["history"] = bondsDf.apply(lambda b: calculate_bond_history(b, inflation_data), axis = 1)
+    return bondsDf.sort_values("transaction_date", ascending=False)
+
+def calculate_rod_value(rod: pd.Series, inflation_data: pd.DataFrame, now: datetime.date):
     currentValue = rod["value"]
-    inflationData = get_infation_data()
+    inflationData = inflation_data
     
     for i in range(0, 12):
         periodStart = rod.transaction_date + relativedelta(years=i)
@@ -54,9 +50,9 @@ def calculate_rod_value(rod: pd.Series, now: datetime.date):
         currentValue = round(currentValue, 0)
     return currentValue
 
-def calculate_rod_history(rod, now):
+def calculate_rod_history(rod, inflation_data: pd.DataFrame, now):
     currentValue = rod["value"]
-    inflationData = get_infation_data()
+    inflationData = inflation_data
     history = [{"ticker": rod["name"],"Date": rod.transaction_date, "value": currentValue}]
     for i in range(0, 12):
         valueInPeriod = 0
@@ -87,14 +83,22 @@ def calculate_rod_history(rod, now):
         
     return history
 
-def calculate_bond_history(bond, now = datetime.now().date()):
+def calculate_bond_history(bond, inflation_data, now = datetime.now().date()):
     if bond.type == "ROD":
-        return calculate_rod_history(bond, now)
+        return calculate_rod_history(bond, inflation_data, now)
     else:
         raise Exception("Not supported bond type")
     
-def calculate_bond_value(bond: pd.Series, now = datetime.now().date()):
+def calculate_bond_value(bond: pd.Series, inflation_data, now = datetime.now().date()):
     if bond.type == "ROD":
-        return calculate_rod_value(bond, now)
+        return calculate_rod_value(bond, inflation_data, now)
     else:
         raise Exception("Not supported bond type")
+    
+def add_bonds(conn: psycopg.connection.Connection, transaction):
+    cursor = conn.cursor()
+    cursor.execute("insert into bonds (bond_type, ticker, direction, transaction_date, price, count, interest_rate, margin, early_sell_commision) values (%s, %s ,%s, %s, %s, %s, %s, %s, %s)", 
+                   (transaction["bond_type"], transaction["ticker"], transaction["direction"], transaction["transaction_date"], transaction["price"], 
+                    transaction["count"], transaction["interest_rate"], transaction["margin"], transaction["early_sell_commision"]))
+    cursor.close()
+    conn.commit()

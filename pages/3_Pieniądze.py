@@ -1,6 +1,7 @@
 import streamlit as st
-import data
+import cached_data as data
 import pandas as pd
+from datetime import datetime
 
 st.set_page_config(layout="wide")
 
@@ -12,7 +13,7 @@ def show_form():
 
 money_latest = data.get_accounts_money_latest()
 money_total = money_latest["value_pln"].sum()
-money_total_row =  pd.DataFrame({"account": ["Total"], "currency": [""], "value": [""], "value_pln": [money_total]})
+money_total_row =  pd.DataFrame({"account": ["Total"], "value_pln": [money_total], "created_at": [datetime.now()]})
 money_latest = pd.concat([money_latest, money_total_row], ignore_index=True)
 
 def money_color(s):
@@ -38,4 +39,5 @@ if st.session_state.show_form:
         st.session_state.show_form = False
         st.rerun()
 
-st.dataframe(money_latest.style.format(precision=2, thousands=' ').apply(money_color, axis = 1), hide_index=True, use_container_width = True )
+st.dataframe(money_latest.style.format({'created_at': lambda x: x.strftime('%Y-%m-%d')}, precision=2, thousands=' ')
+             .apply(money_color, axis = 1), hide_index=True, use_container_width = True )

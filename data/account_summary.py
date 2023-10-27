@@ -1,10 +1,7 @@
 import pandas as pd
-import streamlit as st
-from dateutil.relativedelta import relativedelta
 from datetime import date
 import yfinance as yf
 
-@st.cache_data(ttl= 3600)
 def get_account_summary(stocks: pd.DataFrame, bonds: pd.DataFrame) -> pd.DataFrame:
     now = date.today()
     
@@ -69,7 +66,6 @@ def get_account_summary(stocks: pd.DataFrame, bonds: pd.DataFrame) -> pd.DataFra
         bonds_df = pd.DataFrame(val["history"])
         bonds_df["value_pln"] = bonds_df["value"]
         bonds_df.reset_index(inplace=True)
-        #bonds_df.set_index(["Date", "ticker"], inplace=True)
         bonds_df.drop("value", inplace=True, axis="columns")
         bonds_df.drop("index", inplace=True, axis="columns")
         bonds_value.append(bonds_df)
@@ -85,7 +81,4 @@ def get_account_summary(stocks: pd.DataFrame, bonds: pd.DataFrame) -> pd.DataFra
     account_value_df.sort_index(inplace=True)
     account_value_df.reset_index(inplace=True)
 
-    #account_value_sum_df = account_value_df.groupby("Date")["value_pln"].sum().round(2)
-    #account_value_sum_df = pd.DataFrame(account_value_sum_df).reset_index()
-    #return account_value_sum_df
     return account_value_df

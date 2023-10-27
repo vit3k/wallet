@@ -1,19 +1,16 @@
 import streamlit as st
-import bonds
 import pandas as pd
-import stocks
-import account
-from account_chart import account_chart
-import data
+from account_chart import account_chart, account_chart2, plotly_chart
+import cached_data as data
 
 st.set_page_config(layout="wide")
 
-bondsData = bonds.get_bonds_data()
-stocksData = stocks.get_stocks_data()
+bondsData = data.get_bonds_data()
+stocksData = data.get_stocks_data()
 money_latest = data.get_accounts_money_latest()
 
 currencies_df = data.get_money_currencies()
-currencies_total_row =  pd.DataFrame({"currency": ["Total"], "value": [""], "value_pln": [currencies_df["value_pln"].sum()]})
+currencies_total_row =  pd.DataFrame({"currency": ["Total"], "value": [0], "value_pln": [currencies_df["value_pln"].sum()]})
 currencies_df = pd.concat([currencies_df, currencies_total_row], ignore_index=True)
 
 money_total = money_latest["value_pln"].sum()
@@ -21,7 +18,7 @@ money_total = money_latest["value_pln"].sum()
 bondsAgg = pd.DataFrame(bondsData[["count", "value", "current_value", "gain"]].aggregate('sum')).transpose()
 bondsAgg["gain %"] = bondsAgg["gain"] / bondsAgg["value"] * 100
 
-stocksAgg = stocksData.groupby("ticker")[["count", "value_pln", "current_value_pln", "gain_pln"]].aggregate("sum")
+stocksAgg = stocksData.groupby("ticker")[["count", "value", "current_value", "gain", "value_pln", "current_value_pln", "gain_pln"]].aggregate("sum")
 stocksAgg["gain %"] = stocksAgg["gain_pln"] / stocksAgg["value_pln"] * 100
 
 stockSum = stocksAgg["current_value_pln"].sum()
@@ -36,7 +33,7 @@ stocks_total_row["gain %"] = stocks_total_row["gain_pln"] / stocks_total_row["va
 stocksAgg = pd.concat([stocksAgg, stocks_total_row])
 stocksAgg.reset_index(inplace=True)
 
-accountSummary = account.get_account_summary(stocksData, bondsData)
+accountSummary = data.get_account_summary(stocksData, bondsData)
 
 all_total_df = pd.DataFrame([[investements_total, money_total, (investements_total+money_total)], [investements_total/(investements_total+money_total) * 100, money_total/(investements_total+money_total) * 100, 100]], 
                         columns=["Zainwestowane", "Pieniądze", "Razem"], index=["Kwoty", "Procenty"]).transpose()
@@ -74,9 +71,15 @@ def gain_color(s):
         return ['background-color: #005f7e; font-weight: bold']*len(s)
     return ['background-color: #008b4d']*len(s) if s["gain_pln"] > 0 else ['background-color: #cd3a4b']*len(s)
 
+def gain_color_field(val):
+    color = "#008b4d" if val >= 0 else "#cd3a4b"
+    return f"background-color: {color}"
+
 st.header("Giełda")
-st.dataframe(stocksAgg.style.format(precision=2, thousands=' ').apply(gain_color, axis = 1), use_container_width = True, hide_index=True )
+st.dataframe(stocksAgg.style.format(precision=2, thousands=' ').applymap(gain_color_field, subset=["gain", "gain_pln", "gain %"]), use_container_width = True, hide_index=True )
 
 st.header("Wykres")
-# st.dataframe(accountSummary, use_container_width=True)
-st.altair_chart(account_chart(accountSummary), use_container_width=True)
+#st.dataframe(accountSummary, use_container_width=True)
+#st.altair_chart(account_chart(accountSummary), use_container_width=True)
+#st.altair_chart(account_chart2(accountSummary))
+st.plotly_chart(plotly_chart(accountSummary))
